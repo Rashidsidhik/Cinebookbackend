@@ -19,7 +19,7 @@ connection();
 // middlewares
 app.use(express.json());
 app.use(cors({
-  origin:[`http://localhost:3000`,`http://localhost:3001`,'http://localhost:3002'],
+  origin:[`${process.env.climaxflix}`,`${process.env.climaxadmin}`,`${process.env.climaxtheater}`],
   methods:"GET,PUT,PATCH,POST,DELETE",
 
 }))
@@ -32,7 +32,8 @@ const server = app.listen(port, () => {
 
 const io = socket(server,{
     cors:{
-      origin:[`http://localhost:3000`,`http://localhost:3001`,'http://localhost:3002'],
+      origin:[`${process.env.climaxflix}`,`${process.env.climaxadmin}`,`${process.env.climaxtheater}`],
+
     }
 })
                                 
