@@ -25,7 +25,7 @@ app.use(cors({
 }))
 app.use(morgan("common"));
 
-const port = process.env.PORT || 1000;
+const port = process.env.PORT;
 const server = app.listen(port, () => {
   console.log(`Listening on port ${port}...`);
 });
