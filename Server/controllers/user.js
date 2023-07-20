@@ -439,44 +439,85 @@ console.log(data);
   },
   reservation: async (req, res) => {
     const { id } = req.params;
-    const { total } = req.params;
-    const {
-      ticketPrice,
-      userId,
-      Email,
-      userName,
-      showDate,
-      bookedDate,
-      paymentId,
-      movieName,
-      theaterId,
-      cinemaScreen,
-      startAt,
-      seats,
-      theaterName,
-      TikectCount,
-      movieId,
-    } = req.body;
+  const { total } = req.params;
+  console.log("lllllllllll",req.body.data.Email,"jjjjjjjjjjjjjj")
+  const { data: {
+    ticketPrice,
+    userId,
+    Email,
+    userName,
+    showDate,
+    bookedDate,
+    paymentId,
+    movieName,
+    theaterId,
+    cinemaScreen,
+    startAt,
+    seats,
+    theaterName,
+    TikectCount,
+    movieId,
+  },
+  } = req.body;
+  console.log(Email,"555555")
+  try {
+    const payment = await stripe.paymentIntents.create({
+      amount: total,
+      currency: "INR",
+      description: "Movie+",
+      payment_method: id,
+      confirm: true,
+    });
+    const datas = await Reservation(req.body.data).save();
+    const qrcode = await generateQR(
+      "http//:localhost:3000/reservation/" + datas._id
+    );
+   
+    await Reservation.findByIdAndUpdate(datas._id, {
+      $set: { qrcode: qrcode },
+    });
+    
+    const mailOptions = {
+      from: process.env.Email,
+      to: Email,
+      subject: "Your Ticket Details",
+      text: `
+        Hi ${userName},
 
-    try {
-      const payment = await stripe.paymentIntents.create({
-        amount: total,
-        currency: "INR",
-        description: "Movie+",
-        payment_method: id,
-        confirm: true,
-      });
-      const datas = await Reservation(req.body.data).save();
-      const qrcode = await generateQR(
-        "http//:localhost:3000/reservation/" + datas._id
-      );
-      await Reservation.findByIdAndUpdate(datas._id, {
-        $set: { qrcode: qrcode },
-      });
-      res.json({ status: "payment successfull", datas, qrcode });
-    } catch (error) {
-      res.status(500).json({ message: "something went wrong" + error });
-    }
+        Your ticket for the movie ${movieName} has been successfully booked.
+
+        Here are the details:
+
+        Movie Name: ${movieName}
+        Theater Name: ${theaterName}
+        Cinema Screen: ${cinemaScreen}
+        Show Date: ${showDate}
+        Show Time: ${startAt}
+        Ticket Price: ${ticketPrice}
+        Number of Tickets: ${TikectCount}
+
+        Thank you for booking your ticket with us!
+      `,
+      attachments: [
+        {
+          filename: 'qrcode.png',
+          content: qrcode,
+          encoding: 'base64',
+        },
+      ],
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log(error)
+        res.status(500).json({ message: "Email not sent" });
+      } else {
+        res.json({ status: "payment successfull", datas, qrcode });
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: "something went wrong" + error });
+  }
   },
   getQrCode: async (req, res) => {
     const { movieId } = req.params;
